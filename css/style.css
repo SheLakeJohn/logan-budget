@@ -213,3 +213,42 @@ dialog.sheet::backdrop { background: rgb(0 0 0 / 0.4); }
 .block { display: block; }
 .estimate { background: var(--accent-soft); border-radius: 12px; padding: 12px; margin: 0 0 8px; }
 .row small.block { color: var(--muted); font-size: 14px; }
+
+/* Home: the big "left to plan with" number */
+.hero { text-align: center; padding: 20px 16px; }
+.hero-label { font-weight: 600; }
+.hero-amount { font-size: 44px; font-weight: 800; margin: 2px 0 4px; }
+.hero.good { background: var(--accent-soft); }
+.hero.good .hero-amount { color: var(--good); }
+.hero.bad { background: var(--bad-soft); }
+.hero.bad .hero-amount { color: var(--bad); }
+.hero-note { color: var(--muted); font-size: 15px; }
+.hero.bad .hero-note { color: var(--text); }
+
+/* Home: the breakdown lines */
+.tap-hint { margin: 0 0 4px; }
+details.line { border-bottom: 1px solid var(--line); }
+details.line summary {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  min-height: 52px; padding: 8px 0; cursor: pointer; list-style: none;
+}
+details.line summary::-webkit-details-marker { display: none; }
+details.line summary::after { content: "›"; color: var(--muted); font-size: 22px; transition: transform 0.15s; }
+details.line[open] summary::after { transform: rotate(90deg); }
+.line-label { flex: 1; }
+.line-amount { white-space: nowrap; font-weight: 600; }
+.sign { display: inline-block; width: 18px; color: var(--muted); font-weight: 700; }
+.line-details { padding: 0 0 12px 18px; color: var(--muted); font-size: 15px; }
+.line-details ul { margin: 0; padding-left: 18px; }
+.line-details p { margin: 0 0 8px; }
+.subtotal {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 14px 0; border-bottom: 2px solid var(--line); font-weight: 700;
+}
+.subtotal b { font-size: 19px; }
+.subtotal.final { border-bottom: 0; padding-bottom: 0; font-size: 18px; }
+.subtotal.pos b { color: var(--good); }
+.subtotal.neg b { color: var(--bad); }
+.next-week { font-size: 16px; }
+.quick { display: flex; gap: 8px; }
+.quick .btn { flex: 1; }

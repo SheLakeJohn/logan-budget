@@ -59,3 +59,8 @@ const sharedActions = {
 };
 
 app.render();
+
+// Offline support + always-fresh updates (see sw.js).
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Offline mode not available', e));
+}
