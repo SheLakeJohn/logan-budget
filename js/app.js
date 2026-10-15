@@ -56,9 +56,31 @@ const sharedActions = {
   thisWeek: (app) => { app.weekStart = weekStartOf(today()); app.render(); },
   updatePetrol: (app) => settings.openPetrolPriceForm(app),
   confirmPetrol: (app) => settings.confirmPetrolPrice(app),
+  exportBackup: (app) => settings.exportBackup(app),
 };
 
 app.render();
+
+// Ask the phone to keep our data safe from automatic clean-ups (where supported).
+navigator.storage?.persist?.().catch(() => {});
+
+// "New version available": compare version.json now with what it was when the
+// app opened. Checked whenever the app comes back to the screen.
+async function fetchVersion() {
+  try { return (await (await fetch('version.json', { cache: 'no-store' })).json()).version; } catch { return null; }
+}
+fetchVersion().then((v) => { app.version = v; app.render(); });
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !app.version || document.querySelector('.update-bar')) return;
+  const latest = await fetchVersion();
+  if (latest && latest !== app.version) {
+    const bar = document.createElement('button');
+    bar.className = 'update-bar';
+    bar.textContent = '✨ New version available — tap to update';
+    bar.onclick = () => location.reload();
+    document.body.appendChild(bar);
+  }
+});
 
 // Offline support + always-fresh updates (see sw.js).
 if ('serviceWorker' in navigator) {

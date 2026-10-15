@@ -50,6 +50,26 @@ export function loadData() {
   return defaultData();
 }
 
+// ---- Backup file -----------------------------------------------------------
+
+// Checks a backup file before it replaces everything. Returns an error
+// message, or null if it looks fine.
+export function checkBackup(obj) {
+  if (!obj || typeof obj !== 'object' || obj.app !== 'my-week') return 'This doesn\'t look like a My Week backup file.';
+  const d = obj.data;
+  if (!d || typeof d.settings !== 'object') return 'The backup file is missing its settings.';
+  for (const key of ['costs', 'shifts', 'plans', 'income', 'spending']) {
+    if (!Array.isArray(d[key])) return `The backup file is damaged (${key}).`;
+  }
+  const amounts = [...d.costs, ...d.income, ...d.spending].map((x) => x.amountCents);
+  if (amounts.some((a) => !Number.isInteger(a))) return 'The backup file has an amount that isn\'t valid.';
+  return null;
+}
+
+export function makeBackup(data, date = today()) {
+  return { app: 'my-week', exportedOn: date, data };
+}
+
 export function saveData(data) {
   try {
     localStorage.setItem(KEY, JSON.stringify(data));

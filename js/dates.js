@@ -59,3 +59,8 @@ export function shortLabel(dateStr) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
 }
+
+// Whole days from a to b (both "YYYY-MM-DD").
+export function daysBetween(a, b) {
+  return Math.round((toUTC(b) - toUTC(a)) / 86400000);
+}

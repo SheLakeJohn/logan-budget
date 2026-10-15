@@ -1,6 +1,7 @@
 import { formatCents, petrolCostCents, petrolPriceOn } from '../money.js';
-import { today, shortLabel, lastFirstWednesday } from '../dates.js';
+import { today, shortLabel, lastFirstWednesday, daysBetween } from '../dates.js';
 import { esc, openForm, toast } from '../ui.js';
+import { checkBackup, defaultData, makeBackup } from '../storage.js';
 
 const latestPrice = (s) => [...s.petrolPrices].sort((a, b) => a.from.localeCompare(b.from)).at(-1);
 
@@ -50,6 +51,72 @@ export function confirmPetrolPrice(app) {
   toast('Thanks — price confirmed ✓');
 }
 
+const isInstalled = () => window.navigator.standalone === true
+  || window.matchMedia?.('(display-mode: standalone)').matches;
+
+function ago(date) {
+  const days = daysBetween(date, today());
+  return days === 0 ? 'today' : days === 1 ? 'yesterday' : `${days} days ago`;
+}
+
+// Gentle reminder on Home when there's data worth protecting and no recent backup.
+export function backupReminderHtml(app) {
+  const d = app.data;
+  const entries = d.shifts.length + d.income.length + d.spending.length + d.plans.length;
+  const stale = !d.lastBackup || daysBetween(d.lastBackup, today()) > 14;
+  if (entries < 10 || !stale) return '';
+  return `<div class="banner">💾 <b>Time for a backup?</b> ${d.lastBackup ? `Your last one was ${ago(d.lastBackup)}.`
+    : 'You haven\'t saved one yet.'} It only takes a few seconds.
+    <div class="banner-buttons"><button class="btn small" data-action="exportBackup">Save a backup file</button></div></div>`;
+}
+
+export async function exportBackup(app) {
+  const json = JSON.stringify(makeBackup(app.data), null, 1);
+  const name = `my-week-backup-${today()}.json`;
+  const file = new File([json], name, { type: 'application/json' });
+  try {
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file], title: 'My Week backup' });
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(file);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    }
+  } catch (e) {
+    if (e.name === 'AbortError') return; // he closed the share sheet
+    toast('⚠️ Could not save the backup');
+    return;
+  }
+  app.data.lastBackup = today();
+  app.save();
+  toast('Backup saved ✓');
+}
+
+export function importBackup(app) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    let backup;
+    try { backup = JSON.parse(await file.text()); } catch { backup = null; }
+    const problem = checkBackup(backup);
+    if (problem) return alert(problem);
+    const when = backup.exportedOn ? ` from ${shortLabel(backup.exportedOn)}` : '';
+    if (!confirm(`Restore the backup${when}? This replaces everything currently in the app on this phone.`)) return;
+    const fresh = defaultData();
+    app.data = { ...fresh, ...backup.data, settings: { ...fresh.settings, ...backup.data.settings } };
+    app.data.lastBackup = backup.exportedOn ?? app.data.lastBackup;
+    app.save();
+    toast('Backup restored ✓');
+  };
+  input.click();
+}
+
 function row(label, value, action) {
   return `<button class="row" data-action="${action}"><span>${esc(label)}</span>
     <span class="row-value">${esc(value)} <span class="chev">›</span></span></button>`;
@@ -96,13 +163,28 @@ export function render(app) {
     ${row('New shifts end at', s.shiftEnd, 'editHours')}
   </section>
 
-  <section class="card">
+  <section class="card" id="backup">
     <h2>💾 Backup</h2>
-    <p class="muted">Coming in step 6.</p>
-  </section>`;
+    <p class="muted">Your info is only saved on this phone. Save a backup file now and then (e.g. to iCloud Drive,
+      Google Drive or WhatsApp to yourself) so nothing is lost if the phone is reset or changed.</p>
+    <p>Last backup: <b>${app.data.lastBackup ? `${shortLabel(app.data.lastBackup)} (${ago(app.data.lastBackup)})` : 'never'}</b></p>
+    <button class="btn primary big" data-action="exportBackup">⬆️ Save a backup file</button>
+    <button class="btn" data-action="importBackup">⬇️ Restore from a backup file</button>
+  </section>
+
+  ${isInstalled() ? '' : `<section class="card">
+    <h2>📲 Put this app on your home screen</h2>
+    <ol class="steps">
+      <li>Open this page in <b>Safari</b>.</li>
+      <li>Tap the <b>Share</b> button (the square with an arrow ⬆️).</li>
+      <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+    </ol>
+  </section>`}
+  <p class="muted center">My Week · version ${esc(app.version ?? '')}</p>`;
 }
 
 export const actions = {
+  importBackup: (app) => importBackup(app),
   editScooter(app) {
     const s = app.data.settings;
     openForm({

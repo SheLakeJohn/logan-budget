@@ -1,7 +1,7 @@
 import { formatCents, weeklySummary } from '../money.js';
 import { shortLabel } from '../dates.js';
 import { esc, weekNavHtml } from '../ui.js';
-import { petrolReminderHtml } from './settings.js';
+import { backupReminderHtml, petrolReminderHtml } from './settings.js';
 import { actions as moneyActions, SPENDING_CATEGORIES, INCOME_SOURCES } from './money-log.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -74,6 +74,7 @@ export function render(app) {
 
   return `<h1>Hi Logan 👋</h1>
   ${petrolReminderHtml(app)}
+  ${backupReminderHtml(app)}
   ${weekNavHtml(app)}
   ${hero}
   <section class="card breakdown">
