@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseRandToCents, formatCents, petrolCostCents, petrolPriceOn,
-  shiftPetrolCents, weeklyShareCents, weeklySummary,
+  shiftPetrolCents, weeklyShareCents, weeklySummary, wageCovers, paymentFor,
 } from '../js/money.js';
 import { weekStartOf, isFirstWednesday, lastFirstWednesday } from '../js/dates.js';
 
@@ -169,4 +169,31 @@ test('most recent first Wednesday', () => {
   assert.equal(lastFirstWednesday('2026-10-15'), '2026-10-07');
   assert.equal(lastFirstWednesday('2026-11-03'), '2026-10-07');
   assert.equal(lastFirstWednesday('2026-11-04'), '2026-11-04');
+});
+
+// --- Late / combined payments -----------------------------------------------
+
+test('late pay covering last week AND this week: next week expects nothing', () => {
+  const data = { ...baseData, income: [
+    // Paid Wed 14 Oct for the week of 5 Oct (4 shifts) and the week of 12 Oct (3 shifts).
+    { id: 'p1', date: '2026-10-14', amountCents: 7 * 43000, source: 'wages', covers: ['2026-10-05', '2026-10-12'] },
+  ] };
+  const thisWeek = weeklySummary(data, week);
+  assert.equal(thisWeek.pay.total, 301000);
+  assert.equal(thisWeek.pay.isEstimate, false);
+  assert.equal(thisWeek.nextWeekPay, 0);
+  assert.equal(thisWeek.thisWeekPaidOn, '2026-10-14');
+
+  const nextWeek = weeklySummary(data, '2026-10-19');
+  assert.equal(nextWeek.pay.isEstimate, true);
+  assert.equal(nextWeek.pay.expectedWages, 0);
+  assert.equal(nextWeek.pay.alreadyPaidOn, '2026-10-14');
+});
+
+test('pay logged before weeks were tracked counts as the normal week', () => {
+  const data = { ...baseData, income: [{ id: 'old', date: '2026-10-13', amountCents: 172000, source: 'wages' }] };
+  assert.deepEqual(wageCovers(data.income[0], settings), ['2026-10-05']);
+  assert.equal(paymentFor(data, '2026-10-05').id, 'old');
+  assert.equal(paymentFor(data, '2026-10-12'), null);
+  assert.equal(weeklySummary(data, '2026-10-19').pay.expectedWages, 3 * 43000);
 });

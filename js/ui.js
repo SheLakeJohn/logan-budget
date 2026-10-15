@@ -33,6 +33,11 @@ function fieldHtml(f) {
         f.options.map((o) => `<label class="choice"><input type="radio" name="${f.name}" value="${esc(o.value)}"
           ${o.value === f.value ? 'checked' : ''}><span>${esc(o.label)}</span></label>`).join('')
       }</div>${hint}</div>`;
+    case 'checks': // tick any number of options; value is an array
+      return `<div class="field"><div class="field-label">${esc(f.label)}</div>${
+        f.options.map((o) => `<label class="check-row"><input type="checkbox" name="${f.name}" value="${esc(o.value)}"
+          ${f.value?.includes(o.value) ? 'checked' : ''}><span>${o.label}${o.note ? `<small class="block">${esc(o.note)}</small>` : ''}</span></label>`).join('')
+      }${hint}</div>`;
     case 'toggle':
       return `<div class="field"><label class="toggle-row"><span>${esc(f.label)}</span>
         <input type="checkbox" class="switch" name="${f.name}" ${f.value ? 'checked' : ''}></label>${hint}</div>`;
@@ -61,6 +66,8 @@ function readValues(form, fields) {
       else values[f.name] = Number(text);
     } else if (f.type === 'choice') {
       values[f.name] = form.querySelector(`input[name="${f.name}"]:checked`)?.value ?? null;
+    } else if (f.type === 'checks') {
+      values[f.name] = [...form.querySelectorAll(`input[name="${f.name}"]:checked`)].map((x) => x.value);
     } else if (f.type === 'toggle') {
       values[f.name] = el.checked;
     } else {
@@ -76,7 +83,8 @@ function readValues(form, fields) {
 // Opens a pop-up form that slides up from the bottom of the screen.
 // onSave(values) can return an error message to keep the form open.
 // extraButton: { label, onClick } adds a second button (e.g. "It happened").
-export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete, extraButton }) {
+// onInput(form, event) runs whenever something in the form changes.
+export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete, extraButton, onInput }) {
   const dialog = document.createElement('dialog');
   dialog.className = 'sheet';
   dialog.innerHTML = `<form method="dialog" novalidate>
@@ -102,6 +110,7 @@ export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete, 
     if (problem) form.querySelector('.form-error').textContent = problem;
     else close();
   };
+  if (onInput) ['input', 'change'].forEach((type) => form.addEventListener(type, (e) => onInput(form, e)));
   if (extraButton) {
     dialog.querySelector('[data-extra]').onclick = () => { close(); extraButton.onClick(); };
   }

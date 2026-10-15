@@ -33,10 +33,13 @@ export function render(app) {
   const otherNames = perDayOther.map((o) => o.name.toLowerCase()).join(', ') || 'work-day costs';
   const otherPerDay = perDayOther.reduce((t, o) => t + o.cents, 0);
 
+  const whose = s.payCovers === 'same' ? 'this' : 'last';
   const payDetails = sum.pay.isEstimate
-    ? `<p>Expected: ${plural(sum.pay.expectedShifts, 'shift')} ${s.payCovers === 'same' ? 'this' : 'last'} week × ${formatCents(sum.pay.dailyPayCents)}
-        = ${formatCents(sum.pay.expectedWages)}.</p>${sum.pay.items.length ? list(sum.pay.items.map((i) => `${labelOf(INCOME_SOURCES, i.source)}: ${formatCents(i.amountCents)}`)) : ''}
-       <p class="muted">This is an estimate until you tap "I got paid".</p>
+    ? `${sum.pay.alreadyPaidOn
+        ? `<p>No wages expected: ${whose} week's shifts were already paid on ${shortLabel(sum.pay.alreadyPaidOn)}.</p>`
+        : `<p>Expected: ${plural(sum.pay.expectedShifts, 'shift')} ${whose} week × ${formatCents(sum.pay.dailyPayCents)}
+        = ${formatCents(sum.pay.expectedWages)}.</p>`}${sum.pay.items.length ? list(sum.pay.items.map((i) => `${labelOf(INCOME_SOURCES, i.source)}: ${formatCents(i.amountCents)}`)) : ''}
+       ${sum.pay.alreadyPaidOn ? '' : '<p class="muted">This is an estimate until you tap "I got paid".</p>'}
        <button class="btn small" data-action="addPay">＋ I got paid</button>`
     : list(sum.pay.items.map((i) => `${labelOf(INCOME_SOURCES, i.source)} (${shortLabel(i.date)}): ${formatCents(i.amountCents)}`));
 
@@ -84,8 +87,11 @@ export function render(app) {
     ${after}
     <div class="subtotal final ${good ? 'pos' : 'neg'}"><span>= Left to plan with</span><b>${formatCents(sum.left)}</b></div>
   </section>
-  ${sum.nextWeekPay !== null ? `<section class="card next-week">💡 Coming next week: about <b>${formatCents(sum.nextWeekPay)}</b>
-    <span class="muted">(${plural(sum.workDays.count, 'shift')} this week × ${formatCents(s.dailyPayCents)})</span></section>` : ''}
+  ${sum.nextWeekPay === null ? '' : sum.thisWeekPaidOn
+    ? `<section class="card next-week">💡 This week's shifts were already paid on <b>${shortLabel(sum.thisWeekPaidOn)}</b>,
+       so no pay is expected next week.</section>`
+    : `<section class="card next-week">💡 Coming next week: about <b>${formatCents(sum.nextWeekPay)}</b>
+    <span class="muted">(${plural(sum.workDays.count, 'shift')} this week × ${formatCents(s.dailyPayCents)})</span></section>`}
   <div class="quick">
     <button class="btn" data-action="addSpending">＋ Log spending</button>
     <button class="btn" data-action="go" data-id="schedule">📅 Schedule</button>

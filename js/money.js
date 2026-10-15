@@ -3,7 +3,7 @@
 // Every amount of money is stored as a whole number of cents
 // (R48.00 is stored as 4800) so there are never rounding surprises.
 
-import { addDays, isInWeek } from './dates.js';
+import { addDays, isInWeek, weekStartOf } from './dates.js';
 
 // ---------------------------------------------------------------------------
 // Reading and showing amounts
@@ -84,15 +84,41 @@ export function weeklyShareCents(amountCents, frequency) {
 
 const sum = (list, pick) => list.reduce((total, x) => total + pick(x), 0);
 
+// ---------------------------------------------------------------------------
+// Wages: which work weeks a payment covers
+// ---------------------------------------------------------------------------
+
+// The work week whose pay normally arrives in the week starting payWeek.
+export function dueWorkWeek(settings, payWeek) {
+  return settings.payCovers === 'same' ? payWeek : addDays(payWeek, -7);
+}
+
+// The work weeks (Mondays) a wages entry pays for. Entries saved before this
+// was tracked are assumed to be the normal week.
+export function wageCovers(entry, settings) {
+  return Array.isArray(entry.covers) ? entry.covers : [dueWorkWeek(settings, weekStartOf(entry.date))];
+}
+
+// The wages entry that paid for a work week, or null if it's unpaid.
+// `exceptId` lets the pay form ignore the entry being edited.
+export function paymentFor(data, workWeek, exceptId = null) {
+  return (data.income || []).find((i) => i.source === 'wages' && i.id !== exceptId
+    && wageCovers(i, data.settings).includes(workWeek)) ?? null;
+}
+
+// What a work week earns: its shifts × pay per day.
+export function earnedForWeek(data, workWeek) {
+  const count = (data.shifts || []).filter((x) => isInWeek(x.date, workWeek)).length;
+  return { shifts: count, cents: count * (data.settings.dailyPayCents || 0) };
+}
+
 // Builds every number on the home screen for the week starting weekStart
 // (a Monday). Each line carries `items` so tapping it can show the detail.
 export function weeklySummary(data, weekStart) {
   const { settings } = data;
   const inWeek = (x) => isInWeek(x.date, weekStart);
-  const prevWeek = addDays(weekStart, -7);
 
   const shifts = (data.shifts || []).filter(inWeek).sort((a, b) => a.date.localeCompare(b.date));
-  const prevShifts = (data.shifts || []).filter((x) => isInWeek(x.date, prevWeek));
   const income = (data.income || []).filter(inWeek);
   const spending = (data.spending || []).filter(inWeek);
   const plans = (data.plans || []).filter((p) => inWeek(p) && p.costCents > 0);
@@ -101,11 +127,15 @@ export function weeklySummary(data, weekStart) {
   // Money at the start of the week (optional).
   const startBalance = data.startBalances?.[weekStart] ?? null;
 
-  // Pay. Wages arrive for the PREVIOUS week's shifts (unless the setting says
-  // otherwise). Until he logs actual wages, we show the expected amount.
+  // Pay. Wages normally arrive for the PREVIOUS week's shifts (unless the
+  // setting says otherwise). Until he logs actual wages, we show the expected
+  // amount — or nothing, if that week was already paid (e.g. paid early/late
+  // together with another week).
   const daily = settings.dailyPayCents || 0;
-  const paidShifts = settings.payCovers === 'same' ? shifts : prevShifts;
-  const expectedWages = paidShifts.length * daily;
+  const dueWeek = dueWorkWeek(settings, weekStart);
+  const due = earnedForWeek(data, dueWeek);
+  const alreadyPaidBy = paymentFor(data, dueWeek);
+  const expectedWages = alreadyPaidBy ? 0 : due.cents;
   const wagesLogged = income.filter((i) => i.source === 'wages');
   const otherIncome = income.filter((i) => i.source !== 'wages');
   const wagesAreActual = wagesLogged.length > 0;
@@ -113,7 +143,9 @@ export function weeklySummary(data, weekStart) {
   const pay = {
     total: wages + sum(otherIncome, (i) => i.amountCents),
     isEstimate: !wagesAreActual,
-    expectedShifts: paidShifts.length,
+    dueWeek,
+    expectedShifts: due.shifts,
+    alreadyPaidOn: alreadyPaidBy?.date ?? null,
     dailyPayCents: daily,
     expectedWages,
     items: wagesAreActual ? income : otherIncome,
@@ -149,8 +181,11 @@ export function weeklySummary(data, weekStart) {
 
   const left = available - spent.total - planned.total;
 
-  // What next week's pay should be, based on this week's shifts.
-  const nextWeekPay = settings.payCovers === 'same' ? null : shifts.length * daily;
+  // What next week's pay should be, based on this week's shifts
+  // (nothing if this week's shifts have already been paid).
+  const thisWeekPaidBy = settings.payCovers === 'same' ? null : paymentFor(data, weekStart);
+  const nextWeekPay = settings.payCovers === 'same' ? null : thisWeekPaidBy ? 0 : shifts.length * daily;
+  const thisWeekPaidOn = thisWeekPaidBy?.date ?? null;
 
-  return { weekStart, startBalance, pay, savings, workDays, fixed, available, spent, planned, left, nextWeekPay };
+  return { weekStart, startBalance, pay, savings, workDays, fixed, available, spent, planned, left, nextWeekPay, thisWeekPaidOn };
 }

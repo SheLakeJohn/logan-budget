@@ -35,7 +35,9 @@ export function render(app) {
 
   const pay = s.payCovers === 'same'
     ? `<div><span>Pay for these shifts (this week)</span><b>${formatCents(summary.workDays.count * s.dailyPayCents)}</b></div>`
-    : `<div><span>Pay for these shifts (comes next week)</span><b>${formatCents(summary.nextWeekPay)}</b></div>`;
+    : summary.thisWeekPaidOn
+      ? `<div><span>Pay for these shifts</span><b>Paid ${shortLabel(summary.thisWeekPaidOn)}</b></div>`
+      : `<div><span>Pay for these shifts (comes next week)</span><b>${formatCents(summary.nextWeekPay)}</b></div>`;
 
   return `<h1>Schedule</h1>
   ${weekNavHtml(app)}
