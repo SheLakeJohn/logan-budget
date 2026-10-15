@@ -44,3 +44,18 @@ export function today() {
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
+
+// The most recent first-Wednesday-of-the-month on or before dateStr.
+export function lastFirstWednesday(dateStr) {
+  let d = dateStr;
+  while (!isFirstWednesday(d)) d = addDays(d, -1);
+  return d;
+}
+
+// "Mon 12 Oct" style label.
+export function shortLabel(dateStr) {
+  const d = toUTC(dateStr);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${days[d.getUTCDay()]} ${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
+}

@@ -4,7 +4,7 @@ import {
   parseRandToCents, formatCents, petrolCostCents, petrolPriceOn,
   shiftPetrolCents, weeklyShareCents, weeklySummary,
 } from '../js/money.js';
-import { weekStartOf, isFirstWednesday } from '../js/dates.js';
+import { weekStartOf, isFirstWednesday, lastFirstWednesday } from '../js/dates.js';
 
 const settings = {
   petrolPrices: [{ from: '2026-01-01', cents: 3000 }],
@@ -163,4 +163,10 @@ test('first Wednesday of the month (petrol reminder)', () => {
   assert.equal(isFirstWednesday('2026-10-07'), true);
   assert.equal(isFirstWednesday('2026-10-14'), false);
   assert.equal(isFirstWednesday('2026-11-04'), true);
+});
+
+test('most recent first Wednesday', () => {
+  assert.equal(lastFirstWednesday('2026-10-15'), '2026-10-07');
+  assert.equal(lastFirstWednesday('2026-11-03'), '2026-10-07');
+  assert.equal(lastFirstWednesday('2026-11-04'), '2026-11-04');
 });
