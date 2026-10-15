@@ -208,3 +208,8 @@ dialog.sheet::backdrop { background: rgb(0 0 0 / 0.4); }
 .item .amount { font-weight: 600; white-space: nowrap; }
 .week-facts { display: flex; flex-direction: column; gap: 4px; }
 .week-facts div { display: flex; justify-content: space-between; gap: 12px; }
+
+/* Money tab */
+.block { display: block; }
+.estimate { background: var(--accent-soft); border-radius: 12px; padding: 12px; margin: 0 0 8px; }
+.row small.block { color: var(--muted); font-size: 14px; }
