@@ -1,9 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#0f8a5f"/>
-  <rect x="106" y="126" width="300" height="270" rx="36" fill="#fff"/>
-  <rect x="106" y="126" width="300" height="70" rx="36" fill="#d6f0e4"/>
-  <rect x="106" y="160" width="300" height="36" fill="#d6f0e4"/>
-  <rect x="166" y="96" width="28" height="70" rx="14" fill="#fff"/>
-  <rect x="318" y="96" width="28" height="70" rx="14" fill="#fff"/>
-  <text x="256" y="350" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="150" fill="#0f8a5f">R</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff8a3d"/><stop offset="1" stop-color="#d6336c"/></linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff0a8"/><stop offset="1" stop-color="#f4b400"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="300" cy="150" r="78" fill="url(#coin)" stroke="#c98a00" stroke-width="8"/>
+  <text x="300" y="183" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="92" fill="#9a6200">R</text>
+  <rect x="96" y="200" width="320" height="210" rx="40" fill="#1b2420"/>
+  <rect x="96" y="200" width="320" height="60" rx="30" fill="#2e3a35"/>
+  <rect x="300" y="270" width="140" height="80" rx="26" fill="#ffffff"/>
+  <circle cx="336" cy="310" r="16" fill="#d6336c"/>
 </svg>
