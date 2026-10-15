@@ -1,7 +1,7 @@
 // The app's "shell": the tab bar at the bottom, and switching between screens.
 
 import { loadData, saveData } from './storage.js';
-import { today, weekStartOf } from './dates.js';
+import { addDays, today, weekStartOf } from './dates.js';
 import { toast } from './ui.js';
 import * as home from './screens/home.js';
 import * as schedule from './screens/schedule.js';
@@ -51,6 +51,9 @@ document.addEventListener('click', (e) => {
 
 const sharedActions = {
   go: (app, tab) => app.go(tab),
+  prevWeek: (app) => { app.weekStart = addDays(app.weekStart, -7); app.render(); },
+  nextWeek: (app) => { app.weekStart = addDays(app.weekStart, 7); app.render(); },
+  thisWeek: (app) => { app.weekStart = weekStartOf(today()); app.render(); },
   updatePetrol: (app) => settings.openPetrolPriceForm(app),
   confirmPetrol: (app) => settings.confirmPetrolPrice(app),
 };

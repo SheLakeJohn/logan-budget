@@ -1,6 +1,7 @@
 // Small building blocks shared by every screen: pop-up forms, messages, etc.
 
 import { parseRandToCents } from './money.js';
+import { addDays, shortLabel, today, weekStartOf } from './dates.js';
 
 export function esc(text) {
   return String(text ?? '').replace(/[&<>"']/g, (c) => (
@@ -74,7 +75,8 @@ function readValues(form, fields) {
 
 // Opens a pop-up form that slides up from the bottom of the screen.
 // onSave(values) can return an error message to keep the form open.
-export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete }) {
+// extraButton: { label, onClick } adds a second button (e.g. "It happened").
+export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete, extraButton }) {
   const dialog = document.createElement('dialog');
   dialog.className = 'sheet';
   dialog.innerHTML = `<form method="dialog" novalidate>
@@ -83,6 +85,7 @@ export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete }
     ${fields.map(fieldHtml).join('')}
     <div class="form-error" role="alert"></div>
     <button type="submit" class="btn primary big">${esc(saveLabel)}</button>
+    ${extraButton ? `<button type="button" class="btn" data-extra>${esc(extraButton.label)}</button>` : ''}
     ${onDelete ? '<button type="button" class="btn danger-text" data-delete>Delete</button>' : ''}
   </form>`;
   document.body.appendChild(dialog);
@@ -99,6 +102,9 @@ export function openForm({ title, fields, saveLabel = 'Save', onSave, onDelete }
     if (problem) form.querySelector('.form-error').textContent = problem;
     else close();
   };
+  if (extraButton) {
+    dialog.querySelector('[data-extra]').onclick = () => { close(); extraButton.onClick(); };
+  }
   if (onDelete) {
     dialog.querySelector('[data-delete]').onclick = () => {
       if (confirm('Delete this? This can\'t be undone.')) { onDelete(); close(); }
@@ -116,4 +122,18 @@ export function toast(message) {
   document.body.appendChild(el);
   setTimeout(() => el.classList.add('show'), 10);
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000);
+}
+
+// The "‹ This week ›" bar used on Home and Schedule.
+export function weekNavHtml(app) {
+  const ws = app.weekStart;
+  const current = weekStartOf(today());
+  const name = ws === current ? 'This week' : ws === addDays(current, 7) ? 'Next week'
+    : ws === addDays(current, -7) ? 'Last week' : 'Week of';
+  return `<div class="week-nav">
+    <button class="icon-btn" data-action="prevWeek" aria-label="Previous week">‹</button>
+    <div class="week-title"><b>${name}</b><span>${shortLabel(ws)} – ${shortLabel(addDays(ws, 6))}</span></div>
+    <button class="icon-btn" data-action="nextWeek" aria-label="Next week">›</button>
+  </div>
+  ${ws !== current ? '<button class="link-btn" data-action="thisWeek">Back to this week</button>' : ''}`;
 }
