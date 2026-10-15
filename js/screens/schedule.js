@@ -43,7 +43,7 @@ export function render(app) {
   ${weekNavHtml(app)}
   <section class="card week-facts">
     <div><span>Work days</span><b>${summary.workDays.count}</b></div>
-    <div><span>Work-day costs (petrol, lunch…)</span><b>${formatCents(summary.workDays.total)}</b></div>
+    <div><span>Work-day costs (petrol, food…)</span><b>${formatCents(summary.workDays.total)}</b></div>
     ${pay}
     <div><span>Plans with a cost</span><b>${formatCents(summary.planned.total)}</b></div>
   </section>

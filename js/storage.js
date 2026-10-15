@@ -7,13 +7,13 @@ const KEY = 'logan-budget-v1';
 
 export function defaultData() {
   return {
-    version: 1,
+    version: 2,
     settings: {
       petrolPrices: [{ from: today(), cents: 3000 }],
       litresPer100km: 5,
       roundTripKm: 32,
-      petrolMode: 'calculated', // or 'flat'
-      flatPetrolCents: 4800,
+      petrolMode: 'flat', // or 'calculated'
+      flatPetrolCents: 2820,
       dailyPayCents: 43000,
       payCovers: 'previous', // or 'same'
       weeklySavingsCents: 0,
@@ -21,7 +21,7 @@ export function defaultData() {
       shiftEnd: '17:00',
     },
     costs: [
-      { id: newId(), name: 'Lunch at work', amountCents: 8000, frequency: 'workday', active: true },
+      { id: newId(), name: 'Food at work', amountCents: 10000, frequency: 'workday', active: true },
     ],
     shifts: [],
     plans: [],
@@ -35,6 +35,22 @@ export function newId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
+// One-time changes for data saved by older versions of the app. Only values
+// still at their old starting amounts are changed, so his own edits are kept.
+export function upgrade(data) {
+  if ((data.version ?? 1) < 2) {
+    const s = data.settings;
+    if (s.petrolMode === 'calculated' && s.litresPer100km === 5 && s.roundTripKm === 32) {
+      s.petrolMode = 'flat';
+      s.flatPetrolCents = 2820;
+    }
+    const lunch = data.costs.find((c) => c.name === 'Lunch at work' && c.amountCents === 8000 && c.frequency === 'workday');
+    if (lunch) Object.assign(lunch, { name: 'Food at work', amountCents: 10000 });
+    data.version = 2;
+  }
+  return data;
+}
+
 export function loadData() {
   try {
     const raw = localStorage.getItem(KEY);
@@ -42,7 +58,7 @@ export function loadData() {
       const saved = JSON.parse(raw);
       const fresh = defaultData();
       // Fill in anything added in newer versions of the app.
-      return { ...fresh, ...saved, settings: { ...fresh.settings, ...saved.settings } };
+      return upgrade({ ...fresh, ...saved, settings: { ...fresh.settings, ...saved.settings } });
     }
   } catch (e) {
     console.error('Could not load saved data', e);

@@ -1,7 +1,7 @@
 import { formatCents, petrolCostCents, petrolPriceOn } from '../money.js';
 import { today, shortLabel, lastFirstWednesday, daysBetween, weekStartOf } from '../dates.js';
 import { esc, openForm, toast } from '../ui.js';
-import { checkBackup, defaultData, makeBackup } from '../storage.js';
+import { checkBackup, defaultData, makeBackup, upgrade } from '../storage.js';
 
 const latestPrice = (s) => [...s.petrolPrices].sort((a, b) => a.from.localeCompare(b.from)).at(-1);
 
@@ -109,7 +109,7 @@ export function importBackup(app) {
     const when = backup.exportedOn ? ` from ${shortLabel(backup.exportedOn)}` : '';
     if (!confirm(`Restore the backup${when}? This replaces everything currently in the app on this phone.`)) return;
     const fresh = defaultData();
-    app.data = { ...fresh, ...backup.data, settings: { ...fresh.settings, ...backup.data.settings } };
+    app.data = upgrade({ ...fresh, ...backup.data, settings: { ...fresh.settings, ...backup.data.settings } });
     app.data.lastBackup = backup.exportedOn ?? app.data.lastBackup;
     app.save();
     toast('Backup restored ✓');
@@ -136,6 +136,8 @@ export function render(app) {
   <section class="card">
     <h2>⛽ Petrol price</h2>
     <div class="big-number">${formatCents(price.cents)} <small>per litre</small></div>
+    ${s.petrolMode === 'flat' ? `<p class="muted">Not used at the moment — petrol is a fixed ${formatCents(s.flatPetrolCents)} per work day
+      (change it on the Costs tab).</p>` : ''}
     <button class="btn primary big" data-action="updatePetrol">Update petrol price</button>
     <details class="history"><summary>Price history</summary>
       <ul>${history.map((p) => `<li>${shortLabel(p.from)}: ${formatCents(p.cents)}</li>`).join('')}</ul>
@@ -197,7 +199,7 @@ export const actions = {
       title: 'Start fresh?',
       fields: [
         { name: 'everything', label: 'Also reset settings and costs to how they started', type: 'toggle', value: false,
-          hint: 'Petrol R30, 5 L/100km, 32 km, R430 a day, lunch R80, savings empty.' },
+          hint: 'Petrol R28.20 a work day, R430 a day, food R100 a work day, savings empty.' },
         { name: 'sure', label: 'Type CLEAR to confirm', type: 'text', placeholder: 'CLEAR',
           hint: 'This can\'t be undone. Save a backup first if you might want this info later.' },
       ],

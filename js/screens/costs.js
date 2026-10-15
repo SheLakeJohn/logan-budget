@@ -42,8 +42,9 @@ export function render(app) {
 
   <section class="card">
     <h2>🛵 Every work day</h2>
-    <button class="row" data-action="go" data-id="settings"><span>Petrol <span class="muted">(automatic)</span></span>
-      <span class="row-value">${formatCents(petrol)} <span class="chev">›</span></span></button>
+    <button class="row" data-action="editPetrol"><span>⛽ Petrol
+      <small class="block">To work and back · ${s.petrolMode === 'flat' ? 'fixed amount' : 'from fuel price'}</small></span>
+      <span class="row-value">${formatCents(petrol)} <small>per work day</small> <span class="chev">›</span></span></button>
     ${workday.map(costRow).join('')}
     <div class="total-row"><span>Each work day costs</span><b>${formatCents(perWorkDay)}</b></div>
   </section>
@@ -87,6 +88,23 @@ function costForm(app, cost) {
 }
 
 export const actions = {
+  editPetrol(app) {
+    const s = app.data.settings;
+    openForm({
+      title: 'Petrol per work day',
+      fields: [
+        { name: 'flatPetrolCents', label: 'Petrol for one work day (there and back)', type: 'money', value: s.flatPetrolCents, required: true },
+        { name: 'calculated', label: 'Work it out from the fuel price instead', type: 'toggle', value: s.petrolMode === 'calculated',
+          hint: 'Uses the petrol price, fuel use and distance in Settings.' },
+      ],
+      onSave: (v) => {
+        s.flatPetrolCents = v.flatPetrolCents;
+        s.petrolMode = v.calculated ? 'calculated' : 'flat';
+        app.save();
+        toast('Saved ✓');
+      },
+    });
+  },
   addCost: (app) => costForm(app),
   editCost: (app, id) => costForm(app, app.data.costs.find((c) => c.id === id)),
   editSavings(app) {
