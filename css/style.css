@@ -271,3 +271,4 @@ details.line[open] summary::after { transform: rotate(90deg); }
 }
 .check-row input { width: 24px; height: 24px; flex-shrink: 0; accent-color: var(--accent); }
 .check-row small.block { color: var(--muted); font-size: 14px; }
+.btn.danger { background: var(--bad-soft); color: var(--bad); }

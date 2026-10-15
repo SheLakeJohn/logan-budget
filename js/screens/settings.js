@@ -1,5 +1,5 @@
 import { formatCents, petrolCostCents, petrolPriceOn } from '../money.js';
-import { today, shortLabel, lastFirstWednesday, daysBetween } from '../dates.js';
+import { today, shortLabel, lastFirstWednesday, daysBetween, weekStartOf } from '../dates.js';
 import { esc, openForm, toast } from '../ui.js';
 import { checkBackup, defaultData, makeBackup } from '../storage.js';
 
@@ -172,6 +172,13 @@ export function render(app) {
     <button class="btn" data-action="importBackup">⬇️ Restore from a backup file</button>
   </section>
 
+  <section class="card">
+    <h2>🧹 Start fresh</h2>
+    <p class="muted">Clears your shifts, plans, pay, spending and start-of-week amounts. Your settings
+      (petrol, scooter, pay per day) and costs list stay, unless you choose to reset those too.</p>
+    <button class="btn danger" data-action="startFresh">Clear my data…</button>
+  </section>
+
   ${isInstalled() ? '' : `<section class="card">
     <h2>📲 Put this app on your home screen</h2>
     <ol class="steps">
@@ -185,6 +192,28 @@ export function render(app) {
 
 export const actions = {
   importBackup: (app) => importBackup(app),
+  startFresh(app) {
+    openForm({
+      title: 'Start fresh?',
+      fields: [
+        { name: 'everything', label: 'Also reset settings and costs to how they started', type: 'toggle', value: false,
+          hint: 'Petrol R30, 5 L/100km, 32 km, R430 a day, lunch R80, savings empty.' },
+        { name: 'sure', label: 'Type CLEAR to confirm', type: 'text', placeholder: 'CLEAR',
+          hint: 'This can\'t be undone. Save a backup first if you might want this info later.' },
+      ],
+      saveLabel: 'Clear data',
+      onSave: ({ everything, sure }) => {
+        if (sure.toUpperCase() !== 'CLEAR') return 'Type CLEAR in the box to confirm.';
+        const fresh = defaultData();
+        app.data = everything ? fresh : {
+          ...fresh, settings: app.data.settings, costs: app.data.costs, lastBackup: app.data.lastBackup,
+        };
+        app.weekStart = weekStartOf(today());
+        app.save();
+        toast('All cleared — fresh start ✓');
+      },
+    });
+  },
   editScooter(app) {
     const s = app.data.settings;
     openForm({
